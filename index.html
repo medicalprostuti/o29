@@ -1,0 +1,1525 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>কেমিস্ট্রি ২য় অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question: "ইথাইল আয়োডাইড ও KOH (aq) এর ব",
+          options: {
+            A: "ethane",
+            B: "ethyne",
+            C: "ethene",
+            D: "ethanol",
+          },
+          correct: "D",
+          explanation:
+            "<p>ইথাইল আয়োডাইড (CH₃CH₂I) এর সাথে জলীয় পটাশিয়াম হাইড্রোক্সাইড (KOH (aq)) এর বিক্রিয়া একটি নিউক্লিওফিলিক প্রতিস্থাপন বিক্রিয়া (SN2)। এই বিক্রিয়ায় আয়োডিন পরমাণু হাইড্রক্সিল (-OH) মূলক দ্বারা প্রতিস্থাপিত হয় এবং ইথানল (CH₃CH₂OH) উৎপন্ন হয়।</p>",
+        },
+        {
+          id: 2,
+          question: "কোন যৌগটি জলীয় NaOH এর সাথে বিক্রিয়া করে না?",
+          options: {
+            A: "C₂H₅OH",
+            B: "C₂H₅COOH",
+            C: "CH₃OH",
+            D: "C₆H₅COOH",
+          },
+          correct: "A",
+          explanation:
+            "<p>জলীয় NaOH একটি ক্ষার। অ্যালকোহল (C₂H₅OH এবং CH₃OH) অত্যন্ত দুর্বল অ্যাসিড, তাই তারা জলীয় NaOH এর সাথে সাধারণত বিক্রিয়া করে না। অন্যদিকে, কার্বক্সিলিক অ্যাসিড (C₂H₅COOH এবং C₆H₅COOH) অ্যাসিডিক হওয়ায় NaOH এর সাথে বিক্রিয়া করে লবণ ও পানি উৎপন্ন করে।</p>",
+        },
+        {
+          id: 3,
+          question:
+            "ফরমালডিহাইড এবং পটাসিয়াম একত্রে উত্তপ্ত করা হলে কি পাওয়া যায়?",
+          options: {
+            A: "methyl alcohol",
+            B: "methane",
+            C: "ethyl formate",
+            D: "acetylene",
+          },
+          correct: "A",
+          explanation:
+            "<p>ফরমালডিহাইড (HCHO) এবং পটাশিয়াম (K) এর সাথে বিক্রিয়া করলে মিথানল (CH₃OH) উৎপন্ন হয়। এটি ক্যানিজারো বিক্রিয়ার একটি উদাহরণ, যেখানে একটি অ্যালডিহাইড (এখানে ফরমালডিহাইড) যা α-হাইড্রোজেন পরমাণু ধারণ করে না, সেটি ঘনীভূত ক্ষারের (যেমন KOH) উপস্থিতিতে স্বতঃজারিত ও স্বতঃবিজারিত হয়ে একটি অ্যালকোহল এবং একটি কার্বক্সিলিক অ্যাসিডের লবণ উৎপন্ন করে। তবে, প্রশ্নের মধ্যে 'পটাসিয়াম' (ধাতু) উল্লেখ থাকায় এটি সাধারণ ক্যানিজারো বিক্রিয়াকে ভিন্নভাবে উপস্থাপন করে। ধাতব পটাসিয়াম সরাসরি ফরমালডিহাইডকে বিজারিত করতে পারে, তবে মিথানল সরাসরি প্রধান উৎপাদ হয় না। সম্ভবত, 'পটাসিয়াম' বলতে পটাশিয়াম হাইড্রোক্সাইড (KOH) বোঝানো হয়েছে, যা ক্যানিজারো বিক্রিয়ার শর্ত। সেই হিসেবে মিথানল সঠিক।</p>",
+        },
+        {
+          id: 4,
+          question: "জৈব যৌগে –OH মূলক শনাক্তকরণে কোন বিকারক ব্যবহৃত হয়?",
+          options: {
+            A: "Na₂CO₃ solution",
+            B: "NaOH",
+            C: "HCl",
+            D: "Na metal",
+          },
+          correct: "D",
+          explanation:
+            "<p>জৈব যৌগে -OH (হাইড্রক্সিল) মূলক শনাক্তকরণের জন্য সোডিয়াম ধাতু (Na metal) ব্যবহৃত হয়। অ্যালকোহল এবং ফেনলের মতো -OH মূলকযুক্ত যৌগগুলি সোডিয়াম ধাতুর সাথে বিক্রিয়া করে হাইড্রোজেন গ্যাস (H₂) উৎপন্ন করে। এটি একটি দ্রুত এবং দৃশ্যমান পরীক্ষা।</p>",
+        },
+        {
+          id: 5,
+          question:
+            "কোন বিক্রিয়কটি ইথানল ও ইথানয়িক এসিড উভয়ের সাথেই বিক্রিয়া করে?",
+          options: {
+            A: "H⁺ + K₂Cr₂O₇",
+            B: "NaOH",
+            C: "Na",
+            D: "Na₂CO₃",
+          },
+          correct: "C",
+          explanation:
+            "<p>সোডিয়াম ধাতু (Na) ইথানল (CH₃CH₂OH) এবং ইথানয়িক অ্যাসিড (CH₃COOH) উভয়ের সাথেই বিক্রিয়া করে হাইড্রোজেন গ্যাস (H₂) উৎপন্ন করে। ইথানল সোডিয়ামের সাথে বিক্রিয়া করে সোডিয়াম ইথোক্সাইড উৎপন্ন করে এবং ইথানয়িক অ্যাসিড সোডিয়ামের সাথে বিক্রিয়া করে সোডিয়াম ইথানয়েট উৎপন্ন করে।</p>",
+        },
+        {
+          id: 6,
+          question: "কোন অ্যালকোহলটি নিরুদিত হয়ে অ্যালকিন গঠন করতে পারে না?",
+          options: {
+            A: "CH₃CH(OH)CH₃",
+            B: "CH₃CH₂OH",
+            C: "CH₃OH",
+            D: "CH₃CH₂C(OH)(CH₃)₂",
+          },
+          correct: "C",
+          explanation:
+            "<p>অ্যালকোহল থেকে অ্যালকিন গঠনের জন্য নিরুদন বিক্রিয়ার মাধ্যমে -OH মূলক এবং পাশ্ববর্তী কার্বন থেকে একটি হাইড্রোজেন পরমাণু অপসারিত হতে হয়। মিথানল (CH₃OH) এর ক্ষেত্রে -OH মূলক যুক্ত কার্বনে কোনো পাশ্ববর্তী কার্বন (যার থেকে হাইড্রোজেন অপসারণ করা যায়) নেই, তাই এটি নিরুদিত হয়ে অ্যালকিন গঠন করতে পারে না।</p>",
+        },
+        {
+          id: 7,
+          question:
+            "নিচের কোন এনজাইম Glucose কে Ethyl alcohol এ পরিবর্তিত করে?",
+          options: {
+            A: "Zymase",
+            B: "Diastase",
+            C: "Invertase",
+            D: "Maltase",
+          },
+          correct: "A",
+          explanation:
+            "<p>জাইমেজ (Zymase) এনজাইম কমপ্লেক্স ইস্টে পাওয়া যায় এবং এটি গ্লুকোজকে (C₆H₁₂O₆) ইথাইল অ্যালকোহল (C₂H₅OH) এবং কার্বন ডাই অক্সাইড (CO₂) এ গাঁজন প্রক্রিয়ার মাধ্যমে রূপান্তরিত করে।</p>",
+        },
+        {
+          id: 8,
+          question:
+            "ইথাইল অ্যালকোহলের সাথে নিচের কোন উপাদানটি মিশিয়ে পাওয়ার অ্যালকোহল তৈরি করা হয়?",
+          options: {
+            A: "অকটেন",
+            B: "পেট্রোল",
+            C: "ক্রিসল",
+            D: "বেনজিন",
+          },
+          correct: "B",
+          explanation:
+            "<p>পাওয়ার অ্যালকোহল হলো ইথাইল অ্যালকোহল এবং পেট্রোলের একটি মিশ্রণ, যা যানবাহনের জ্বালানি হিসেবে ব্যবহৃত হয়। এটি জীবাশ্ম জ্বালানির বিকল্প হিসেবে এবং পরিবেশ দূষণ কমাতে সহায়তা করে।</p>",
+        },
+        {
+          id: 9,
+          question:
+            "স্টার্চকে ম্যালটোজে পরিণত করতে নিচের কোন এনজাইমটি ব্যবহৃত হয়?",
+          options: {
+            A: "সুক্রেজ",
+            B: "মল্টেজ",
+            C: "জাইমেজ",
+            D: "ডায়াস্টেজ",
+          },
+          correct: "D",
+          explanation:
+            "<p>ডায়াস্টেজ (Diastase) এনজাইম স্টার্চ (শ্বেতসার) কে হাইড্রোলাইসিস করে ম্যালটোজে রূপান্তরিত করে। এটি ম্যালটিং প্রক্রিয়ায় ব্যবহৃত হয় এবং বিয়ার উৎপাদনে গুরুত্বপূর্ণ ভূমিকা পালন করে।</p>",
+        },
+        {
+          id: 10,
+          question: "পরম অ্যালকোহল কোনটি?",
+          options: {
+            A: "90% ইথাইল অ্যালকোহল",
+            B: "90% ইথাইল অ্যালকোহল + 10% মিথাইল অ্যালকোহল",
+            C: "100% ইথাইল অ্যালকোহল",
+            D: "95.6% ইথাইল অ্যালকোহল ও 4.4% পানি",
+          },
+          correct: "C",
+          explanation:
+            "<p>পরম অ্যালকোহল বা অ্যানহাইড্রাস অ্যালকোহল বলতে 100% বিশুদ্ধ ইথাইল অ্যালকোহলকে বোঝায়। এটি সম্পূর্ণরূপে পানিমুক্ত থাকে। 95.6% ইথাইল অ্যালকোহল ও 4.4% পানির মিশ্রণকে রেকটিফাইড স্পিরিট বলা হয়, যা একটি এজেওট্রোপিক মিশ্রণ।</p>",
+        },
+        {
+          id: 11,
+          question: "কোনটি ইথানলের ভৌত ধর্ম নয়?",
+          options: {
+            A: "মিষ্টি অ্যালকোহলিক গন্ধযুক্ত",
+            B: "উদ্বায়ী তরল",
+            C: "পানিতে অদ্রবণীয়",
+            D: "পানিতে সম্পূর্ণ দ্রবণীয়",
+          },
+          correct: "C",
+          explanation:
+            "<p>ইথানল (ইথাইল অ্যালকোহল) একটি পোলার যৌগ এবং এটি পানির সাথে হাইড্রোজেন বন্ধন তৈরি করতে পারে, যার ফলে এটি পানিতে সম্পূর্ণ দ্রবণীয়। সুতরাং, 'পানিতে অদ্রবণীয়' ইথানলের একটি ভৌত ধর্ম নয়। এটি মিষ্টি অ্যালকোহলিক গন্ধযুক্ত এবং কক্ষ তাপমাত্রায় একটি উদ্বায়ী তরল।</p>",
+        },
+        {
+          id: 12,
+          question:
+            "যানবাহনে পেট্রোল ব্যবহার সীমিত রাখার জন্য পেট্রোলের সাথে ইথাইল অ্যালকোহল ও তৃতীয় কোনো পদার্থ মিশিয়ে মোটরের জ্বালানি হিসেবে ব্যবহার করা হয়। নিম্নের কোনটি উক্ত তৃতীয় পদার্থের অন্তর্ভুক্ত নয়?",
+          options: {
+            A: "বেনজিন",
+            B: "টেট্রালিন",
+            C: "টলুইন",
+            D: "ইথার",
+          },
+          correct: "D",
+          explanation:
+            "<p>পেট্রোল, ইথাইল অ্যালকোহল এবং অন্যান্য সংযোজনী যেমন বেনজিন, টলুইন, বা টেট্রালিন মিশিয়ে পাওয়ার অ্যালকোহল বা গেসোহল তৈরি করা হয়, যা জ্বালানি হিসেবে ব্যবহৃত হয়। ইথার (যেমন ডাইমিথাইল ইথার) নিজেই একটি জ্বালানি, তবে এটি সাধারণত পেট্রোল-ইথানল মিশ্রণের তৃতীয় উপাদান হিসেবে ব্যবহৃত হয় না।</p>",
+        },
+        {
+          id: 13,
+          question: "রেকটিফাইড স্পিরিটের স্ফুটনাঙ্ক (°C) হলো-",
+          options: {
+            A: "78.15",
+            B: "103.3",
+            C: "99",
+            D: "80.1",
+          },
+          correct: "A",
+          explanation:
+            "<p>রেকটিফাইড স্পিরিট হলো 95.6% ইথানল এবং 4.4% পানির একটি এজেওট্রোপিক মিশ্রণ। এই মিশ্রণের একটি নির্দিষ্ট স্ফুটনাঙ্ক রয়েছে, যা বিশুদ্ধ ইথানলের স্ফুটনাঙ্কের (78.37°C) কাছাকাছি। 78.15°C হলো এই মিশ্রণের স্ফুটনাঙ্ক।</p>",
+        },
+        {
+          id: 14,
+          question:
+            "আলু থেকে ইথানল উৎপাদনের সময়ে নিম্নের কোন এনজাইমের প্রয়োজন হয়?",
+          options: {
+            A: "ইনভারটেজ",
+            B: "জাইমেজ",
+            C: "ডায়াস্টেজ",
+            D: "ম্যালটেজ",
+          },
+          correct: "B",
+          explanation:
+            "<p>আলু থেকে ইথানল উৎপাদনের প্রক্রিয়ায় প্রথমে স্টার্চকে ডায়াস্টেজ এনজাইম দ্বারা ম্যালটোজে এবং তারপর ম্যালটেজ দ্বারা গ্লুকোজে রূপান্তরিত করা হয়। পরিশেষে, গ্লুকোজকে জাইমেজ (Zymase) এনজাইম দ্বারা ইথানল ও কার্বন ডাই অক্সাইডে গাঁজন করা হয়। তাই, ইথানল উৎপাদনের জন্য জাইমেজ এনজাইম অপরিহার্য।</p>",
+        },
+        {
+          id: 15,
+          question:
+            "Moisturizing cream তৈরিতে নিচের কোন অ্যালকোহল ব্যবহৃত হয়?",
+          options: {
+            A: "হেক্সেন 1,3,4,6-টেট্রাওল",
+            B: "2-মিথাইল-2-প্রোপানল",
+            C: "প্রোপানল-2",
+            D: "২°-অ্যালকোহল",
+          },
+          correct: "A",
+          explanation:
+            "<p>গ্লিসারল বা প্রোপেন-1,2,3-ট্রাইওল একটি পলিহাইড্রক্সিল অ্যালকোহল যা ময়েসচারাইজিং ক্রিম, সাবান এবং অন্যান্য প্রসাধনী তৈরিতে ব্যবহৃত হয় এর আর্দ্রতাকারক (humectant) বৈশিষ্ট্যের জন্য। হেক্সেন 1,3,4,6-টেট্রাওল (Hexane-1,3,4,6-tetraol) সরাসরি ব্যবহৃত হয় এমনটি প্রচলিত নয়। তবে, গ্লিসারলের মতো পলিহাইড্রক্সিল অ্যালকোহল এই কাজে ব্যবহৃত হয়।</p>",
+        },
+        {
+          id: 16,
+          question: "নিম্নের কোন যৌগটির স্ফুটনাঙ্ক 78.3°C?",
+          options: {
+            A: "C₂H₅OH",
+            B: "CHCl₃",
+            C: "CCl₄",
+            D: "CHCl₃",
+          },
+          correct: "A",
+          explanation:
+            "<p>ইথানল (C₂H₅OH) এর স্ফুটনাঙ্ক 78.3°C। ক্লোরোফর্ম (CHCl₃) এর স্ফুটনাঙ্ক প্রায় 61.2°C এবং কার্বন টেট্রাক্লোরাইড (CCl₄) এর স্ফুটনাঙ্ক প্রায় 76.7°C।</p>",
+        },
+        {
+          id: 17,
+          question: "২°-অ্যালকোহলের কার্যকরী মূলক কোনটি?",
+          options: {
+            A: "–C-OH",
+            B: "–CH-OH",
+            C: "=C-OH",
+            D: "CH₂OH",
+          },
+          correct: "B",
+          explanation:
+            "<p>২° (সেকেন্ডারি) অ্যালকোহলে হাইড্রক্সিল (-OH) মূলকটি এমন একটি কার্বনের সাথে যুক্ত থাকে যা সরাসরি আরও দুটি কার্বন পরমাণুর সাথে যুক্ত থাকে। এই কার্বন পরমাণুতে একটি হাইড্রোজেনও থাকে, তাই এর কার্যকরী মূলক হলো –CH-OH।</p>",
+        },
+        {
+          id: 18,
+          question: "নিচের কোনটি টারশিয়ারি অ্যালকোহল?",
+          options: {
+            A: "(CH₃)₃C-OH",
+            B: "(CH₃)₂CH-OH",
+            C: "CH₃CH₂OH",
+            D: "CH₂(OH)-CH₂(OH)",
+          },
+          correct: "A",
+          explanation:
+            "<p>টারশিয়ারি (৩°) অ্যালকোহলে হাইড্রক্সিল (-OH) মূলকটি এমন একটি কার্বনের সাথে যুক্ত থাকে যা সরাসরি তিনটি কার্বন পরমাণুর সাথে যুক্ত থাকে। (CH₃)₃C-OH হলো 2-মিথাইলপ্রোপানল-2 বা টারশিয়ারি বিউটাইল অ্যালকোহল, যা একটি টারশিয়ারি অ্যালকোহল।</p>",
+        },
+        {
+          id: 19,
+          question: "অ্যালাইল অ্যালকোহলের সংকেত কোনটি?",
+          options: {
+            A: "CH₃-CH₂-CH₂OH",
+            B: "CH₃-CH(OH)-CH₃",
+            C: "H₂C=CH-CH₂-OH",
+            D: "CH₃-CH=CH-OH",
+          },
+          correct: "C",
+          explanation:
+            "<p>অ্যালাইল অ্যালকোহল হলো একটি অসম্পৃক্ত অ্যালকোহল যেখানে হাইড্রক্সিল (-OH) মূলকটি একটি অ্যালাইল গ্রুপে যুক্ত থাকে। অ্যালাইল গ্রুপ হলো H₂C=CH-CH₂-। সুতরাং, অ্যালাইল অ্যালকোহলের সংকেত হলো H₂C=CH-CH₂-OH।</p>",
+        },
+        {
+          id: 20,
+          question: "A + PCl₅ → B + Na+শুষ্ক ইথার → n-বিউটেন; A কোনটি?",
+          options: {
+            A: "CH₃OH → CH₃Cl",
+            B: "CH₃OH → CH₃CH₂Cl",
+            C: "CH₃CH₂OH → CH₃Cl",
+            D: "CH₃CH₂OH → CH₃CH₂Cl",
+          },
+          correct: "D",
+          explanation:
+            "<p>বিক্রিয়াটি দুটি ধাপে সম্পন্ন হয়েছে। প্রথম ধাপে A + PCl₅ → B, যেখানে অ্যালকোহল PCl₅ এর সাথে বিক্রিয়া করে অ্যালকাইল হ্যালাইড (B) উৎপন্ন করে। দ্বিতীয় ধাপে B + Na + শুষ্ক ইথার → n-বিউটেন, এটি উর্টজ বিক্রিয়া। উর্টজ বিক্রিয়ায় দুটি অ্যালকাইল হ্যালাইড অণু একত্রিত হয়ে দ্বিগুণ কার্বন বিশিষ্ট অ্যালকেন উৎপন্ন করে। যেহেতু n-বিউটেন (৪টি কার্বন) উৎপন্ন হয়েছে, তাই B যৌগটিতে দুটি কার্বন থাকা উচিত (যেমন CH₃CH₂Cl)। CH₃CH₂Cl (ইথাইল ক্লোরাইড) অ্যালকোহল থেকে উৎপন্ন হয়। সুতরাং, A যৌগটি হবে ইথাইল অ্যালকোহল (CH₃CH₂OH) এবং B যৌগটি হবে ইথাইল ক্লোরাইড (CH₃CH₂Cl)।</p>",
+        },
+        {
+          id: 21,
+          question: "রেকটিফাইড স্পিরিট কী?",
+          options: {
+            A: "8.8% ইথানল ও 95.6% পানি",
+            B: "95.6% ইথানল ও 4.4% পানি",
+            C: "6% ইথানল ও 94% পানি",
+            D: "94% ইথানল ও 4% পানি",
+          },
+          correct: "B",
+          explanation:
+            "<p>রেকটিফাইড স্পিরিট হলো ইথানল এবং পানির একটি এজেওট্রোপিক মিশ্রণ, যা পাতন দ্বারা পৃথক করা যায় না। এর নির্দিষ্ট গঠন হলো 95.6% ইথানল এবং 4.4% পানি (ভর অনুসারে)।</p>",
+        },
+        {
+          id: 22,
+          question:
+            "নিম্নের কোন যৌগটি জারিত হলে সমসংখ্যক কার্বনযুক্ত কিটোন উৎপন্ন হয়?",
+          options: {
+            A: "১° অ্যালকোহল",
+            B: "২° অ্যালকোহল",
+            C: "৩° অ্যালকোহল",
+            D: "কোনটিই নয়",
+          },
+          correct: "B",
+          explanation:
+            "<p>২° (সেকেন্ডারি) অ্যালকোহল জারিত হলে সমসংখ্যক কার্বনযুক্ত কিটোন উৎপন্ন হয়। উদাহরণস্বরূপ, প্রোপানল-২ (CH₃CH(OH)CH₃) জারিত হলে প্রোপানোন (CH₃COCH₃) উৎপন্ন হয়। ১° অ্যালকোহল জারিত হয়ে অ্যালডিহাইড এবং পরে কার্বক্সিলিক অ্যাসিড উৎপন্ন করে, আর ৩° অ্যালকোহল সহজে জারিত হয় না এবং জারিত হলেও কার্বন শিকল ভেঙে যায়।</p>",
+        },
+        {
+          id: 23,
+          question: "বিউটানল-2 কে গাঢ় H₂SO₄ সহ উত্তপ্ত করলে কী পাওয়া যায়?",
+          options: {
+            A: "বিউটিন-1",
+            B: "বিউটিন-2",
+            C: "বিউটানোন",
+            D: "বিউটান্যাল",
+          },
+          correct: "B",
+          explanation:
+            "<p>বিউটানল-2 (CH₃CH₂CH(OH)CH₃) কে গাঢ় H₂SO₄ (নিরুদক) এর উপস্থিতিতে উত্তপ্ত করলে নিরুদন বিক্রিয়ার মাধ্যমে বিউটিন উৎপন্ন হয়। এই ক্ষেত্রে, সায়জেফ নীতি (Saytzeff's rule) অনুসারে, হাইড্রোজেন পরমাণু সেই কার্বন থেকে অপসারিত হয় যেখানে কম সংখ্যক হাইড্রোজেন পরমাণু আছে, ফলে অধিক প্রতিস্থাপিত অ্যালকিন, অর্থাৎ বিউটিন-2 (CH₃CH=CHCH₃) প্রধান উৎপাদ হিসেবে পাওয়া যায়।</p>",
+        },
+        {
+          id: 24,
+          question: "কোনটিতে H-বন্ধন ঘটে?",
+          options: {
+            A: "CH₄",
+            B: "CH₃OH",
+            C: "CH₃OCH₃",
+            D: "CH₃Cl",
+          },
+          correct: "B",
+          explanation:
+            "<p>হাইড্রোজেন বন্ধন ঘটে যখন হাইড্রোজেন পরমাণু একটি উচ্চ তড়িৎ ঋণাত্মক পরমাণু (যেমন অক্সিজেন, নাইট্রোজেন, বা ফ্লোরিন) এর সাথে সরাসরি যুক্ত থাকে। মিথানল (CH₃OH) এ হাইড্রোজেন পরমাণু অক্সিজেনের সাথে সরাসরি যুক্ত থাকে, তাই এটি হাইড্রোজেন বন্ধন গঠন করতে পারে। CH₄ (মিথেন), CH₃OCH₃ (ডাইমিথাইল ইথার) এবং CH₃Cl (মিথাইল ক্লোরাইড) এ হাইড্রোজেন বন্ধন ঘটে না।</p>",
+        },
+        {
+          id: 25,
+          question: "লুকাস বিকারক ব্যবহৃত হয় কোনটি শনাক্তকরণে?",
+          options: {
+            A: "ফেনল",
+            B: "অ্যালকোহল",
+            C: "অ্যালডিহাইড",
+            D: "ফ্যাটি এসিড",
+          },
+          correct: "B",
+          explanation:
+            "<p>লুকাস বিকারক (গাঢ় HCl এবং অনার্দ্র ZnCl₂) অ্যালকোহলের শ্রেণি (১°, ২°, ৩°) শনাক্তকরণে ব্যবহৃত হয়। ৩° অ্যালকোহল দ্রুত বিক্রিয়া করে ঘোলাটে হয়, ২° অ্যালকোহল কিছুক্ষণ পর ঘোলাটে হয়, এবং ১° অ্যালকোহল সহজে বিক্রিয়া করে না বা উত্তপ্ত করলে বিক্রিয়া করে।</p>",
+        },
+        {
+          id: 26,
+          question: "আইসোপ্রোপাইল অ্যালকোহল কোনটি?",
+          options: {
+            A: "প্রোপানল-1",
+            B: "2-মিথাইল প্রোপানল",
+            C: "প্রোপানল-2",
+            D: "2-মিথাইল প্রোপানল-2",
+          },
+          correct: "C",
+          explanation:
+            "<p>আইসোপ্রোপাইল অ্যালকোহল হলো প্রোপানল-2 (CH₃CH(OH)CH₃) এর সাধারণ নাম। এটি একটি সেকেন্ডারি অ্যালকোহল যেখানে হাইড্রক্সিল মূলকটি প্রোপেন শিকলের মাঝের কার্বন পরমাণুর সাথে যুক্ত থাকে।</p>",
+        },
+        {
+          id: 27,
+          question: "কোন যৌগটি জলীয় NaOH এর সাথে বিক্রিয়া করবে না?",
+          options: {
+            A: "C₂H₅OH",
+            B: "CH₃OH",
+            C: "C₆H₅COOH",
+            D: "C₂H₅COOH",
+          },
+          correct: "A",
+          explanation:
+            "<p>জলীয় NaOH একটি শক্তিশালী ক্ষার। কার্বক্সিলিক অ্যাসিড (C₆H₅COOH এবং C₂H₅COOH) অ্যাসিডিক হওয়ায় NaOH এর সাথে বিক্রিয়া করে লবণ ও পানি উৎপন্ন করে। মিথানল (CH₃OH) যদিও অত্যন্ত দুর্বল অ্যাসিড, তবে ইথানল (C₂H₅OH) মিথানলের চেয়েও কম অম্লীয় এবং জলীয় NaOH এর সাথে সাধারণত কোনো উল্লেখযোগ্য বিক্রিয়া করে না। প্রশ্নটি পুনরাবৃত্ত হওয়ায় একই উত্তর।</p>",
+        },
+        {
+          id: 28,
+          question:
+            "মুক্ত শিকল কাঠামোর গ্লুকোজ অণুতে কয়টি ২°-অ্যালকোহল মূলক আছে?",
+          options: {
+            A: "3",
+            B: "4",
+            C: "5",
+            D: "6",
+          },
+          correct: "B",
+          explanation:
+            "<p>গ্লুকোজের মুক্ত শিকল কাঠামোতে একটি অ্যালডিহাইড মূলক (-CHO), একটি ১° অ্যালকোহল মূলক (-CH₂OH) এবং চারটি ২° অ্যালকোহল মূলক (-CH(OH)-) থাকে।</p>",
+        },
+        {
+          id: 29,
+          question:
+            "কোন পরীক্ষা দ্বারা মিথানল ও ইথানলের মধ্যে পার্থক্য করা যায়?",
+          options: {
+            A: "আয়োডোফরম",
+            B: "কার্বিল অ্যামিন",
+            C: "বেয়ার পরীক্ষা",
+            D: "লুকাস বিকারক",
+          },
+          correct: "A",
+          explanation:
+            "<p>আয়োডোফরম পরীক্ষা (Iodoform test) দ্বারা মিথানল ও ইথানলের মধ্যে পার্থক্য করা যায়। ইথানল (CH₃CH₂OH) এই পরীক্ষা দেয় কারণ এতে CH₃CH(OH)- গ্রুপ রয়েছে, যা আয়োডোফরম (CHI₃, হলুদ অধঃক্ষেপ) উৎপন্ন করে। মিথানল (CH₃OH) এ এই গ্রুপ না থাকায় এটি আয়োডোফরম পরীক্ষা দেয় না।</p>",
+        },
+        {
+          id: 30,
+          question: "কোনটি ৩° অ্যালকোহলের কার্যকরী মূলক?",
+          options: {
+            A: "–C-OH",
+            B: "CH-OH",
+            C: "–C-OH",
+            D: "–CH₂OH",
+          },
+          correct: "A",
+          explanation:
+            "<p>৩° (টারশিয়ারি) অ্যালকোহলে হাইড্রক্সিল (-OH) মূলকটি এমন একটি কার্বনের সাথে যুক্ত থাকে যা সরাসরি তিনটি কার্বন পরমাণুর সাথে যুক্ত থাকে। এই কার্বন পরমাণুতে কোনো হাইড্রোজেন থাকে না। তাই, এর কার্যকরী মূলক হলো –C-OH।</p>",
+        },
+        {
+          id: 31,
+          question: "নিচের কোন যৌগটি হ্যালোফরম বিক্রিয়া দেয় না?",
+          options: {
+            A: "CH₃CH(OH)CH₃",
+            B: "CH₃CONH₂",
+            C: "CH₃CHO",
+            D: "CH₃COCH₃",
+          },
+          correct: "B",
+          explanation:
+            "<p>হ্যালোফরম বিক্রিয়া সেই সকল যৌগ দেয় যাদের মধ্যে CH₃CO- গ্রুপ অথবা CH₃CH(OH)- গ্রুপ বিদ্যমান থাকে। CH₃CH(OH)CH₃ (প্রোপানল-২), CH₃CHO (অ্যাসিটালডিহাইড) এবং CH₃COCH₃ (অ্যাসিটোন) এই গ্রুপগুলো থাকায় হ্যালোফরম বিক্রিয়া দেয়। কিন্তু CH₃CONH₂ (অ্যাসিটামাইড) এ এই গ্রুপ না থাকায় এটি হ্যালোফরম বিক্রিয়া দেয় না।</p>",
+        },
+        {
+          id: 32,
+          question: "ভিনাইল অ্যালকোহল কোনটি?",
+          options: {
+            A: "CH₃-CH=CH-OH",
+            B: "CH₂=CH-OH",
+            C: "CH₂=CH-CH₂-OH",
+            D: "CH₂=C-CH₂-OH",
+          },
+          correct: "B",
+          explanation:
+            "<p>ভিনাইল অ্যালকোহল হলো CH₂=CH-OH। এটি একটি এenol যৌগ যেখানে হাইড্রক্সিল (-OH) মূলকটি সরাসরি কার্বন-কার্বন দ্বিবন্ধনযুক্ত কার্বনের সাথে যুক্ত থাকে। ভিনাইল অ্যালকোহল অত্যন্ত অস্থিতিশীল এবং দ্রুত ট্যাটোমেরিজম প্রক্রিয়ার মাধ্যমে অ্যাসিটালডিহাইডে রূপান্তরিত হয়।</p>",
+        },
+        {
+          id: 33,
+          question: "ইনভার্ট চিনি হলো সমআণবিক মিশ্রণের-",
+          options: {
+            A: "গ্লুকোজ ও সুক্রোজ",
+            B: "গ্লুকোজ ও ফ্রুক্টোজ",
+            C: "ফ্রুক্টোজ ও সুক্রোজ",
+            D: "কোনোটিই নয়",
+          },
+          correct: "B",
+          explanation:
+            "<p>ইনভার্ট চিনি (Invert sugar) হলো সুক্রোজের (সাধারণ চিনি) হাইড্রোলাইসিস দ্বারা উৎপন্ন গ্লুকোজ এবং ফ্রুক্টোজের একটি সমআণবিক মিশ্রণ। এই প্রক্রিয়াকে ইনভারশন বলে এবং এর ফলে দ্রবণের অপটিক্যাল ঘূর্ণনের দিক পরিবর্তিত হয়।</p>",
+        },
+        {
+          id: 34,
+          question:
+            "ইথানলের কত % জ্বলীয় দ্রবণ disinfectant হিসেবে ব্যবহৃত হয়?",
+          options: {
+            A: "40%",
+            B: "60%",
+            C: "70%",
+            D: "30%",
+          },
+          correct: "C",
+          explanation:
+            "<p>ইথানলের 70% জলীয় দ্রবণ সাধারণত একটি কার্যকর জীবাণুনাশক (disinfectant) এবং অ্যান্টিসেপটিক হিসেবে ব্যবহৃত হয়। এই ঘনত্বে, ইথানল ব্যাকটেরিয়া, ভাইরাস এবং ছত্রাককে কার্যকরভাবে মেরে ফেলতে পারে।</p>",
+        },
+        {
+          id: 35,
+          question: "কোন যৌগটি আয়োডোফরম বিক্রিয়া ঘটায় না?",
+          options: {
+            A: "মিথানল",
+            B: "ইথানল",
+            C: "প্রোপানল-2",
+            D: "বিউটানল-2",
+          },
+          correct: "A",
+          explanation:
+            "<p>আয়োডোফরম বিক্রিয়া সেই সকল যৌগ দেয় যাদের মধ্যে CH₃CO- গ্রুপ (যেমন কিটোন, অ্যাসিটালডিহাইড) অথবা CH₃CH(OH)- গ্রুপ (যেমন ২° অ্যালকোহল) বিদ্যমান থাকে। মিথানল (CH₃OH) এ এই গ্রুপগুলো না থাকায় এটি আয়োডোফরম বিক্রিয়া দেয় না। ইথানল, প্রোপানল-২ এবং বিউটানল-২ তে CH₃CH(OH)- গ্রুপ থাকায় তারা আয়োডোফরম বিক্রিয়া দেয়।</p>",
+        },
+        {
+          id: 36,
+          question: "কোন অ্যালকোহলটি আয়োডোফরম পরীক্ষা দিবে?",
+          options: {
+            A: "1-প্রোপানল",
+            B: "2-প্রোপানল",
+            C: "3-প্রোপানল",
+            D: "4-প্রোপানল",
+          },
+          correct: "B",
+          explanation:
+            "<p>আয়োডোফরম পরীক্ষা সেই সকল অ্যালকোহল দেয় যাদের মধ্যে CH₃CH(OH)- গ্রুপ বিদ্যমান থাকে। 2-প্রোপানল (CH₃CH(OH)CH₃) এ এই গ্রুপটি রয়েছে, তাই এটি আয়োডোফরম পরীক্ষা দেয়। 1-প্রোপানল (CH₃CH₂CH₂OH) এ CH₃CH(OH)- গ্রুপ নেই, তাই এটি এই পরীক্ষা দেয় না।</p>",
+        },
+        {
+          id: 37,
+          question: "অ্যালকোহলের অম্লধর্মীতা পানি অপেক্ষা-",
+          options: {
+            A: "বেশি",
+            B: "কম",
+            C: "সমান",
+            D: "কোনোটিই নয়",
+          },
+          correct: "B",
+          explanation:
+            "<p>অ্যালকোহল পানি অপেক্ষা কম অম্লধর্মী। এর কারণ হলো, অ্যালকোহলে অ্যালকাইল গ্রুপ (+I প্রভাব) অক্সিজেনের ইলেকট্রন ঘনত্ব বাড়িয়ে দেয়, যা -OH বন্ধনকে দুর্বল করে না এবং প্রোটন (H⁺) মুক্ত করার প্রবণতা কমিয়ে দেয়। অন্যদিকে, পানিতে অক্সিজেনের উপর ইলেকট্রন ঘনত্ব কম থাকায় এটি সহজে প্রোটন মুক্ত করতে পারে।</p>",
+        },
+        {
+          id: 38,
+          question:
+            "নিম্নের কোন যৌগের সংস্পর্শে বিকারকের বিক্রিয়া দ্রুততম হয়?",
+          options: {
+            A: "(CH₃)₃COH",
+            B: "(CH₃)₂CHOH",
+            C: "CH₃(CH₂)₂OH",
+            D: "CH₃CH₂OH",
+          },
+          correct: "A",
+          explanation:
+            "<p>লুকাস বিকারকের (গাঢ় HCl এবং অনার্দ্র ZnCl₂) সাথে অ্যালকোহলের বিক্রিয়ার হার অ্যালকোহলের ক্রমের উপর নির্ভর করে। ৩° (টারশিয়ারি) অ্যালকোহল (যেমন (CH₃)₃COH) সবচেয়ে দ্রুত বিক্রিয়া করে, কারণ উৎপন্ন কার্বোকেশন সবচেয়ে স্থিতিশীল হয়। এরপর ২° অ্যালকোহল এবং সবশেষে ১° অ্যালকোহল বিক্রিয়া করে।</p>",
+        },
+        {
+          id: 39,
+          question: "নিম্নের কোন যৌগটির স্ফুটনাঙ্ক সবচেয়ে বেশি?",
+          options: {
+            A: "CH₃CH₂OCH₂CH₃",
+            B: "C₄H₁₀",
+            C: "CH₃CHO",
+            D: "C₂H₅OH",
+          },
+          correct: "D",
+          explanation:
+            "<p>ইথানল (C₂H₅OH) এর স্ফুটনাঙ্ক উল্লেখিত যৌগগুলোর মধ্যে সবচেয়ে বেশি। এর কারণ হলো, ইথানলে হাইড্রক্সিল (-OH) মূলক থাকায় এটি আন্তঃআণবিক হাইড্রোজেন বন্ধন গঠন করতে পারে। এই হাইড্রোজেন বন্ধন ভাঙতে অতিরিক্ত শক্তির প্রয়োজন হয়, ফলে এর স্ফুটনাঙ্ক বেশি হয়। অন্যান্য যৌগগুলিতে (ডাইইথাইল ইথার, বিউটেন, অ্যাসিটালডিহাইড) হাইড্রোজেন বন্ধন হয় না বা দুর্বল হয়।</p>",
+        },
+        {
+          id: 40,
+          question:
+            "গাঢ় HCl ও অনার্দ্র জিংক ক্লোরাইড (ZnCl₂) এর দ্রবণকে কী বলা হয়?",
+          options: {
+            A: "টলেন বিকারক",
+            B: "গ্রিগনার্ড বিকারক",
+            C: "লুকাস বিকারক",
+            D: "সিফস বিকারক",
+          },
+          correct: "C",
+          explanation:
+            "<p>গাঢ় হাইড্রোক্লোরিক অ্যাসিড (HCl) এবং অনার্দ্র জিংক ক্লোরাইড (ZnCl₂) এর মিশ্রণকে লুকাস বিকারক (Lucas reagent) বলা হয়। এটি অ্যালকোহলের শ্রেণি (১°, ২°, ৩°) শনাক্তকরণে ব্যবহৃত হয়।</p>",
+        },
+        {
+          id: 41,
+          question: "অম্লীয় দ্রবণ দ্বারা সহজে জারিত করা যায় না-",
+          options: {
+            A: "CH₃(CH₂)₂CH₂OH",
+            B: "CH₃CH(OH)CH₃",
+            C: "(CH₃)₂CH-CH₂OH",
+            D: "(CH₃)₃C-OH",
+          },
+          correct: "D",
+          explanation:
+            "<p>টারশিয়ারি (৩°) অ্যালকোহল (যেমন (CH₃)₃C-OH) অম্লীয় দ্রবণ দ্বারা সহজে জারিত হয় না। কারণ, ৩° অ্যালকোহলে হাইড্রক্সিল (-OH) মূলক যুক্ত কার্বনে কোনো হাইড্রোজেন পরমাণু থাকে না, যা জারণের জন্য প্রয়োজন। ১° এবং ২° অ্যালকোহল সহজেই জারিত হয়।</p>",
+        },
+        {
+          id: 42,
+          question: "PCl₅ এর সাথে কোনটির বিক্রিয়ায় HCl উৎপন্ন হয়?",
+          options: {
+            A: "ইথার",
+            B: "অ্যালকোহল",
+            C: "অ্যামিন",
+            D: "গ্রিগনার্ড বিকারক",
+          },
+          correct: "B",
+          explanation:
+            "<p>PCl₅ (ফসফরাস পেন্টাক্লোরাইড) অ্যালকোহলের (-OH) মূলকের সাথে বিক্রিয়া করে অ্যালকাইল ক্লোরাইড, POCl₃ এবং HCl গ্যাস উৎপন্ন করে। এটি অ্যালকোহল শনাক্তকরণের একটি পরীক্ষা।</p>",
+        },
+        {
+          id: 43,
+          question: "নিচের কোনটি সবচেয়ে অম্লীয়?",
+          options: {
+            A: "ফেনল",
+            B: "বেনজাইল অ্যালকোহল",
+            C: "m-ক্লোরোফেনল",
+            D: "সাইক্লোহেক্সানল",
+          },
+          correct: "C",
+          explanation:
+            "<p>সাধারণভাবে, ফিনল অ্যালকোহলের চেয়ে বেশি অম্লীয়। m-ক্লোরোফেনল (m-chlorophenol) ফেনল অপেক্ষা বেশি অম্লীয় কারণ ক্লোরিন পরমাণুর ইলেকট্রন প্রত্যাহারকারী প্রভাব (-I প্রভাব) m-অবস্থানে থেকেও ফিনলের অম্লীয়তা বাড়ায়, যদিও p-অবস্থানের মতো শক্তিশালী নয়। বেনজাইল অ্যালকোহল এবং সাইক্লোহেক্সানল অ্যালকোহল হওয়ায় ফেনলের চেয়ে কম অম্লীয়।</p>",
+        },
+        {
+          id: 44,
+          question: "ইথানলের স্ফুটনাঙ্ক কত?",
+          options: {
+            A: "78°C",
+            B: "18°C",
+            C: "101°C",
+            D: "118°C",
+          },
+          correct: "A",
+          explanation:
+            "<p>ইথানলের (C₂H₅OH) স্ফুটনাঙ্ক প্রায় 78°C (বা 78.37°C)।</p>",
+        },
+        {
+          id: 45,
+          question: "কোনটি হ্যালোফরম বিক্রিয়ায় অংশগ্রহণ করে না?",
+          options: {
+            A: "CH₃OH",
+            B: "CH₃-CHO",
+            C: "CH₃CH₂OH",
+            D: "CH₃-CO-CH₃",
+          },
+          correct: "A",
+          explanation:
+            "<p>হ্যালোফরম বিক্রিয়া সেই সকল যৌগ দেয় যাদের মধ্যে CH₃CO- গ্রুপ অথবা CH₃CH(OH)- গ্রুপ বিদ্যমান থাকে। মিথানল (CH₃OH) এ এই গ্রুপগুলো না থাকায় এটি হ্যালোফরম বিক্রিয়া দেয় না। CH₃-CHO (অ্যাসিটালডিহাইড), CH₃CH₂OH (ইথানল) এবং CH₃-CO-CH₃ (অ্যাসিটোন) এই গ্রুপগুলো থাকায় হ্যালোফরম বিক্রিয়া দেয়।</p>",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                                              <label class="option" data-option="${option}">
+                                                <div class="circle">${option}</div>
+                                                <span class="option-text">${question.options[option]}</span>
+                                              </label>
+                                            `;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                                                 <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                                                 <div class="explanation-content">
+                                                   <div class="explanation-label">ব্যাখ্যা:</div>
+                                                   ${question.explanation}
+                                                 </div>
+                                               </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                                            <p class="question-label">${
+                                              index + 1
+                                            }. ${question.question}</p>
+                                            <div class="options">
+                                              ${optionsHTML}
+                                            </div>
+                                            ${explanationHTML}
+                                          `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
